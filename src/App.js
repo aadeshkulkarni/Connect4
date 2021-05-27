@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { winningArrays, circles } from "./utils"
+import rulepic from "./example.png"
 function App() {
   const [currentPlayer, setCurrentPlayer] = useState(1)
   const [player1, setPlayer1] = useState("Player 1")
@@ -78,7 +79,7 @@ function App() {
   }
 
   return (
-    <div className="font-noto w-full h-full min-h-full flex justify-center items-center flex-col bg-gradient-to-r from-gray-900 to-gray-800 relative">
+    <div className="font-noto w-full h-full min-h-full flex justify-center items-center flex-col bg-gradient-to-r from-gray-900 to-gray-800 relative overflow-y-auto">
       <h3 className="p-4 text-cyan-400 text-3xl opacity-80 lg:text-6xl">
         CONNECT 4{" "}
       </h3>
@@ -104,7 +105,7 @@ function App() {
               onClick={() => {
                 onClickHandler(index)
               }}
-              className={`w-40 h-40 rounded-full m-0.5 border focus-within:outline-none focus:outline-none
+              className={`w-40 h-40 rounded-full m-0.5 border focus-within:outline-none focus:outline-none active:outline-none focus:ring-0 active:outline-none
               ${
                 box[index + 6] !== 1 &&
                 box[index + 6] !== 2 &&
@@ -125,7 +126,6 @@ function App() {
           ))}
       </div>
       <div className="text-white p-3 grid grid-cols-1 gap-2 w-full lg:flex lg:justify-center lg:items-center">
-        <h4 className="p-2 text-center">Actions:</h4>
         <button
           onClick={() => setRules(true)}
           className="p-4 border border-gray-700  bg-gradient-to-r from-blueGray-800 to-gray-800 shadow-xl rounded-lg text-sm focus-within:outline-none bg-gray-900 hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
@@ -176,7 +176,7 @@ function App() {
       )}
       {playerInfo && (
         <div className="absolute inset-0 flex justify-center items-center h-full w-full">
-          <div className="bg-gray-900 w-full h-full flex flex-col justify-center items-center">
+          <div className="bg-gray-900 w-full h-full flex flex-col justify-center items-center relative">
             <h2 className="text-white text-3xl m-3">Player Info</h2>
             <input
               type="text"
@@ -204,9 +204,16 @@ function App() {
         </div>
       )}
       {rules && (
-        <div className="absolute inset-0 flex justify-center items-center h-full w-full bg-gray-900 ">
-          <div className="h-full flex flex-col justify-center items-center text-white w-full lg:w-5/12">
+        <div className="absolute inset-0 flex justify-center items-center h-full w-full bg-gray-900 overflow-y-auto">
+          <div className="h-full flex flex-col justify-center items-center text-white w-full lg:w-5/12 relative">
+            <div
+              className="absolute top-5 right-5 text-4xl font-bold text-white"
+              onClick={() => setRules(false)}
+            >
+              X
+            </div>
             <h2 className="text-3xl p-2">Connect 4 - Rules</h2>
+            <img src={rulepic} className="w-44 h-48 my-2" alt="rules" />
             <p className="w-11/12 lg:4/12">
               The Connect 4 Board Game Rules are easy to understand. In fact, it
               is in the name.{" "}
