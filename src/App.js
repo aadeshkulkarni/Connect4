@@ -79,8 +79,8 @@ function App() {
   }
 
   return (
-    <div className="font-noto w-full h-full min-h-full flex justify-center items-center flex-col bg-gradient-to-r from-gray-900 to-gray-800 relative overflow-y-auto">
-      <h3 className="p-4 text-cyan-400 text-3xl opacity-80 lg:text-6xl">
+    <div className="relative flex flex-col items-center justify-center w-full h-full min-h-full overflow-y-auto font-noto bg-gradient-to-r from-gray-900 to-gray-800">
+      <h3 className="p-4 text-3xl text-cyan-400 opacity-80 lg:text-6xl">
         CONNECT 4{" "}
       </h3>
       <h3
@@ -98,7 +98,7 @@ function App() {
         's Turn
       </h3>{" "}
       {result && <h3>{result}</h3>}
-      <div className="border-separate border border-gray-50 shadow-lg flex flex-wrap w-240 h-280 rounded-lg">
+      <div className="flex flex-wrap border border-separate rounded-lg shadow-lg border-gray-50 w-240 h-280">
         {box &&
           box.map((item, index) => (
             <div
@@ -125,44 +125,44 @@ function App() {
             ></div>
           ))}
       </div>
-      <div className="text-white p-3 grid grid-cols-1 gap-2 w-full lg:flex lg:justify-center lg:items-center">
+      <div className="grid w-full grid-cols-1 gap-2 p-3 text-white lg:flex lg:justify-center lg:items-center">
         <button
           onClick={() => setRules(true)}
-          className="p-4 border border-gray-700  bg-gradient-to-r from-blueGray-800 to-gray-800 shadow-xl rounded-lg text-sm focus-within:outline-none bg-gray-900 hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
+          className="p-4 text-sm bg-gray-900 border border-gray-700 rounded-lg shadow-xl bg-gradient-to-r from-blueGray-800 to-gray-800 focus-within:outline-none hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
         >
           Rules
         </button>
         <button
-          className="p-4 border border-gray-700  bg-gradient-to-r from-blueGray-800 to-gray-800 shadow-xl rounded-lg text-sm focus-within:outline-none bg-gray-900 hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
+          className="p-4 text-sm bg-gray-900 border border-gray-700 rounded-lg shadow-xl bg-gradient-to-r from-blueGray-800 to-gray-800 focus-within:outline-none hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
           onClick={() => setPlayerInfo(true)}
         >
           Change Player info
         </button>
         <button
-          className="p-4 border border-gray-700 bg-gradient-to-r from-blueGray-800 to-gray-800 shadow-xl rounded-lg text-sm focus-within:outline-none bg-gray-900 hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
+          className="p-4 text-sm bg-gray-900 border border-gray-700 rounded-lg shadow-xl bg-gradient-to-r from-blueGray-800 to-gray-800 focus-within:outline-none hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
           onClick={() => reset()}
         >
           Reset Game
         </button>
       </div>
       {dialog && (
-        <div className="absolute top-10 bg-gray-900 bg-opacity-95 p-4 border border-gray-300 rounded-md text-white animate-coin-bounce">
+        <div className="absolute p-4 text-white bg-gray-900 border border-gray-300 rounded-md top-10 bg-opacity-95 animate-coin-bounce">
           You cant go in there{" "}
         </div>
       )}
       {result && (
-        <div className="absolute inset-0 flex justify-center items-center h-full w-full">
-          <div className="bg-black bg-opacity-60 w-full h-full flex flex-col justify-center items-center">
-            <div className="h-2/5 bg-black w-full flex flex-col justify-center items-center">
-              <h2 className="text-white text-4xl m-3 animate-pulse uppercase">
+        <div className="absolute inset-0 flex items-center justify-center w-full h-full">
+          <div className="flex flex-col items-center justify-center w-full h-full bg-black bg-opacity-60">
+            <div className="flex flex-col items-center justify-center w-full bg-black h-2/5">
+              <h2 className="m-3 text-4xl text-white uppercase animate-pulse">
                 {result}
               </h2>
-              <h3 className="text-gray-100 text-sm m-2 mt-5">
+              <h3 className="m-2 mt-5 text-sm text-gray-100">
                 {currentPlayer === 2 ? player2 : player1}, do you think you can
                 beat {currentPlayer === 2 ? player1 : player2}?
               </h3>
               <button
-                className="bg-gradient-to-r from-cyan-500 to-teal-400 border-teal-400 text-white p-4  rounded-lg w-11/12 shadow-lg"
+                className="w-11/12 p-4 text-white border-teal-400 rounded-lg shadow-lg bg-gradient-to-r from-cyan-500 to-teal-400"
                 onClick={() => {
                   beginPlay()
                 }}
@@ -175,25 +175,25 @@ function App() {
         </div>
       )}
       {playerInfo && (
-        <div className="absolute inset-0 flex justify-center items-center h-full w-full">
-          <div className="bg-gray-900 w-full h-full flex flex-col justify-center items-center relative">
-            <h2 className="text-white text-3xl m-3">Player Info</h2>
+        <div className="absolute inset-0 flex items-center justify-center w-full h-full">
+          <div className="relative flex flex-col items-center justify-center w-full h-full bg-gray-900">
+            <h2 className="m-3 text-3xl text-white">Player Info</h2>
             <input
               type="text"
               placeholder="Enter Player 1 name"
-              className="p-4 border border-gray-300 w-11/12 mb-2 text-gray-600 rounded-md lg:w-3/12 focus:outline-none focus-within:outline-none"
+              className="w-11/12 p-4 mb-2 text-gray-600 border border-gray-300 rounded-md lg:w-3/12 focus:outline-none focus-within:outline-none"
               value={player1}
               onChange={(e) => setPlayer1(e.target.value)}
             />
             <input
               type="text"
               placeholder="Enter Player 2 name"
-              className="p-4 border border-gray-300 w-11/12 mb-2 text-gray-600 rounded-md lg:w-3/12 focus:outline-none focus-within:outline-none"
+              className="w-11/12 p-4 mb-2 text-gray-600 border border-gray-300 rounded-md lg:w-3/12 focus:outline-none focus-within:outline-none"
               value={player2}
               onChange={(e) => setPlayer2(e.target.value)}
             />
             <button
-              className="bg-gradient-to-r from-cyan-500 to-teal-400 border-teal-400 text-white p-4 rounded-lg w-11/12 lg:w-3/12 focus:outline-none focus-within:outline-none"
+              className="w-11/12 p-4 text-white border-teal-400 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-400 lg:w-3/12 focus:outline-none focus-within:outline-none"
               onClick={() => {
                 beginPlay()
               }}
@@ -204,35 +204,35 @@ function App() {
         </div>
       )}
       {rules && (
-        <div className="absolute inset-0 flex justify-center items-center h-full w-full bg-gray-900 overflow-y-auto">
-          <div className="h-full flex flex-col justify-center items-center text-white w-full lg:w-5/12 relative">
+        <div className="absolute inset-0 flex items-center justify-center w-full h-full overflow-y-auto bg-gray-900">
+          <div className="relative flex flex-col items-center justify-center w-full h-full text-white lg:w-5/12">
             <div
-              className="absolute top-5 right-5 text-4xl font-bold text-white"
+              className="absolute text-4xl font-bold text-white top-5 right-5"
               onClick={() => setRules(false)}
             >
               X
             </div>
-            <h2 className="text-3xl p-2">Connect 4 - Rules</h2>
-            <img src={rulepic} className="w-44 h-48 my-2" alt="rules" />
-            <p className="w-11/12 lg:4/12">
+            <h2 className="p-2 text-3xl">Connect 4 - Rules</h2>
+            <img src={rulepic} className="h-48 my-2 w-44" alt="rules" />
+            <p className="w-11/12 lg:w-4/12">
               The Connect 4 Board Game Rules are easy to understand. In fact, it
               is in the name.{" "}
             </p>
-            <p className="w-11/12 mt-2 lg:4/12">
+            <p className="w-11/12 mt-2 lg:w-4/12">
               To win Connect Four, all you have to do is connect four of your
               colored checker pieces in a row, much the same as tic tac toe.
               This can be done horizontally, vertically or diagonally.
             </p>
-            <p className="w-11/12 mt-2 lg:4/12">
+            <p className="w-11/12 mt-2 lg:w-4/12">
               Each player will drop in one checker piece at a time. This will
               give you a chance to either build your row, or stop your opponent
               from getting four in a row.
             </p>
-            <p className="w-11/12 mt-2 lg:4/12">
+            <p className="w-11/12 mt-2 lg:w-4/12">
               Players alternate chances until we have a winner
             </p>
             <button
-              className="bg-gradient-to-r from-cyan-500 to-teal-400 border-teal-400 text-white p-4 rounded-lg w-11/12 mt-2 lg:w-5/12"
+              className="w-11/12 p-4 mt-2 text-white border-teal-400 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-400 lg:w-5/12"
               onClick={() => {
                 setPlayerInfo(true)
                 setRules(false)
