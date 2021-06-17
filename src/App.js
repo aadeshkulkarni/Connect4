@@ -1,246 +1,449 @@
 import { useState, useEffect } from "react"
-import { winningArrays, circles } from "./utils"
-import rulepic from "./example.png"
+import mole from "./mole.svg"
+import reset from "./reset.svg"
+import Sound from "react-sound"
+import successSound from "./notification.mp3"
+import ReactGA from "react-ga"
+import config from "./config"
+import * as firebaseService from "./services/firestore"
+import mute from "./asset/volume-mute.svg"
+import medium from "./asset/volume-medium.svg"
+
+ReactGA.initialize("UA-198335802-1")
+
 function App() {
-  const [currentPlayer, setCurrentPlayer] = useState(1)
-  const [player1, setPlayer1] = useState("Player 1")
-  const [player2, setPlayer2] = useState("Player 2")
-  const [box, setBox] = useState(circles)
-  const [result, setResult] = useState()
-  const [dialog, setDialog] = useState(false)
-  const [rules, setRules] = useState(true)
-  const [playerInfo, setPlayerInfo] = useState(false)
+  useEffect(() => {
+    ReactGA.pageview(window.location.pathname)
+  }, [])
 
-  const [winningSet, setWinningSet] = useState([])
-
-  function checkBoard() {
-    for (let y = 0; y < winningArrays.length; y++) {
-      const square1 = box[winningArrays[y][0]]
-      const square2 = box[winningArrays[y][1]]
-      const square3 = box[winningArrays[y][2]]
-      const square4 = box[winningArrays[y][3]]
-
-      //check those squares to see if they all have the class of player-one
-      if (square1 === 1 && square2 === 1 && square3 === 1 && square4 === 1) {
-        setWinningSet([
-          winningArrays[y][0],
-          winningArrays[y][1],
-          winningArrays[y][2],
-          winningArrays[y][3],
-        ])
-
-        setResult(`${player1} Wins!`)
-      }
-      //check those squares to see if they all have the class of player-two
-      if (square1 === 2 && square2 === 2 && square3 === 2 && square4 === 2) {
-        setWinningSet([
-          winningArrays[y][0],
-          winningArrays[y][1],
-          winningArrays[y][2],
-          winningArrays[y][3],
-        ])
-
-        setResult(`${player2} Wins!`)
-      }
-    }
+  const COUNTDOWN_TIMER = 30
+  const RESET_TIMER = 3000
+  const [sound, setSound] = useState(true)
+  const [loader, setLoader] = useState(false)
+  const [loaderMessage, setLoaderMessage] = useState("")
+  const [leaderscreen, setLeaderscreen] = useState(false)
+  const [leaderboard, setLeaderboard] = useState([])
+  const [soundStatus, setSoundStatus] = useState(false)
+  const [score, setScore] = useState(0)
+  const [timer, setTimer] = useState(COUNTDOWN_TIMER)
+  const [resetTimer, setResetTimer] = useState(RESET_TIMER)
+  const [moleNumber, setMoleNumber] = useState()
+  const [initial, setInitial] = useState(true)
+  const [resetScreen, setResetScreen] = useState(false)
+  const [showResult, setShowResult] = useState(false)
+  const [name, setName] = useState("")
+  function countDown() {
+    setTimer(timer - 1)
   }
 
-  function reset() {
-    setBox(circles)
-    setCurrentPlayer(1)
-    setResult()
-    setWinningSet([])
+  let countdowntimerId
+
+  function randomGenerator() {
+    if (timer > 0) {
+      const moleAtPosition = Math.ceil(Math.random() * 9)
+      setMoleNumber(moleAtPosition)
+    }
+  }
+  async function addLeaderboardFn(name, score) {
+    const data = await firebaseService.addLeaderBoard(name, score)
+    return data
+  }
+
+  async function getLeaderboardFn() {
+    const data = await firebaseService.getLeaderboard()
+    console.log(data)
+    setLeaderboard(data)
   }
 
   useEffect(() => {
-    checkBoard()
-  }, [box])
-
-  const onClickHandler = (index) => {
-    console.log("index: ", index)
-    if (box[index + 6] !== 0 && box[index] !== 1 && box[index] !== 2) {
-      const newBox = [...box]
-      newBox[index] = currentPlayer
-      console.log(newBox)
-      setBox(newBox)
-      setCurrentPlayer(currentPlayer === 1 ? 2 : 1)
-    } else {
-      setDialog(true)
-      setTimeout(() => {
-        setDialog(false)
-      }, 3000)
-      console.log("Cant go here")
+    if (score != 0) {
+      setSoundStatus(true)
     }
-  }
+  }, [score])
+  useEffect(() => {
+    if (timer > 0) {
+      const id = setInterval(randomGenerator, 500)
+      return () => clearInterval(id)
+    }
+  }, [timer])
 
-  const beginPlay = () => {
-    reset()
-    setPlayerInfo(false)
+  useEffect(() => {
+    if (timer > 0) {
+      countdowntimerId = setInterval(countDown, 1000)
+      return () => clearInterval(countdowntimerId)
+    }
+    if (timer === 0) {
+      setTimer(-1)
+      const res = addLeaderboardFn(name, score)
+
+      const highScore = JSON.parse(localStorage.getItem("highScore"))
+      if (score > highScore) {
+        localStorage.setItem("highScore", score)
+      }
+      ReactGA.event({
+        category: "score",
+        action: name,
+        label: score,
+      })
+      setLoader(true)
+      setLoaderMessage("Loading results...")
+      setTimeout(() => {
+        setLoader(false)
+        setLoaderMessage("")
+        setShowResult(true)
+      }, 3000)
+    }
+  }, [timer])
+
+  const resetHandler = (e) => {
+    setTimer(-1)
+    setLoader(true)
+    setLoaderMessage("Get Ready to Whack")
+    setTimeout(() => {
+      setLoader(false)
+      setLoaderMessage("")
+      setTimer(COUNTDOWN_TIMER)
+      setScore(0)
+      randomGenerator()
+    }, 3000)
+    ReactGA.event({
+      category: "reset",
+      action: "reset clicked",
+      label: name,
+    })
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full min-h-full overflow-y-auto font-noto bg-gradient-to-r from-gray-900 to-gray-800">
-      <h3 className="p-4 text-3xl text-cyan-400 opacity-80 lg:text-6xl">
-        CONNECT 4{" "}
-      </h3>
-      <h3
-        className={`w-240 text-center text-xl p-4 text-white mb-2 rounded-lg lg:my-4 ${
-          currentPlayer === 1 &&
-          "bg-gradient-to-r from-cyan-500 to-teal-400 border-teal-400"
-        } ${
-          currentPlayer === 2 &&
-          "bg-gradient-to-r from-pink-500 to-rose-400 border-rose-400"
-        } `}
+    <div className="relative flex flex-col items-center justify-center w-full h-full bg-emerald-600 bg-opacity-80 font-raleway">
+      
+      {resetScreen && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center w-full bg-gray-800 h-hull">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center w-full bg-black h-hull animate-pulse">
+            <h1 className="text-xl text-white animate-ping">Get Ready</h1>
+          </div>
+        </div>
+      )}
+      <Sound
+        url={successSound}
+        ignoreMobileRestrictions={true}
+        playStatus={
+          sound && soundStatus ? Sound.status.PLAYING : Sound.status.STOPPED
+        }
+        onFinishedPlaying={() => {
+          setSoundStatus(false)
+        }}
+      />
+
+      <div className="absolute top-5 right-5">
+        {sound && !leaderscreen ? (
+          <img
+            src={medium}
+            className="z-20 w-8 h-8 cursor-pointer"
+            onClick={() => setSound(false)}
+          />
+        ) : (
+          <img
+            src={mute}
+            className="z-20 w-8 h-8 cursor-pointer"
+            onClick={() => setSound(true)}
+          />
+        )}
+      </div>
+      <div className="absolute flex items-center justify-around w-8/12 top-5 lg:top-20">
+        <h1 className="p-2 text-3xl text-gray-800"> Whack-A-Mole</h1>
+      </div>
+      <h1 className="p-2 text-2xl font-light text-gray-800">{name}</h1>
+
+      <div className="flex items-center justify-between w-10/12 mb-12 lg:w-3/12 lg:m-12">
+        <div classNam="flex flex-col">
+          <h1 className="p-1 text-xl font-light text-gray-800 lg:text-3xl">
+            Score:
+          </h1>
+          <h1 className="p-2 pt-0 text-xl text-center text-gray-800 lg:text-3xl">
+            {score}
+          </h1>
+        </div>
+        <img
+          src={reset}
+          className="w-10 h-10 rounded-full shadow-xl active:bg-opacity-50 lg:w-20 lg:h-20"
+          onClick={(e) => {
+            resetHandler(e)
+          }}
+        />
+        <div classNam="flex flex-col">
+          <h1 className="p-1 text-xl font-light text-gray-800 lg:text-3xl">
+            Timer:{" "}
+          </h1>
+          <h1 className="p-2 pt-0 text-xl text-center text-gray-800 lg:text-3xl">
+            {timer}
+          </h1>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap p-2 mb-8 border-4 border-separate rounded-lg shadow-xl border-emerald-700 border-opacity-60 bg-emerald-700 bg-opacity-60 w-320 h-320">
+        <div
+          tabIndex="1"
+          className={`${
+            moleNumber === 1
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          }  bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer flex justify-center items-center  active:outline-none focus:outline-none focus-within:outline-none`}
+          // onFocus={() => console.log("Executed")}
+          onClick={() => {
+            timer > 0 && moleNumber === 1 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 1 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 2
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          }  bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 2 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 2 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 3
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 3 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 3 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 4
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 4 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 4 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 5
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 5 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 5 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 6
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 6 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 6 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 7
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 7 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 7 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 8
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 8 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 8 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+        <div
+          className={`${
+            moleNumber === 9
+              ? "bg-gradient-to-r from-gray-900 to-black"
+              : "bg-green-800"
+          } bg-opacity-90 h-100 w-100 m-0.5 shadow-inner hover:bg-green-900 cursor-pointer active:bg-green-700 flex justify-center items-center `}
+          onClick={() => {
+            timer > 0 && moleNumber === 9 && setScore(score + 50)
+          }}
+        >
+          {moleNumber === 9 && (
+            <img src={mole} className="w-16 h-16 animate-wiggle" />
+          )}
+        </div>
+      </div>
+      {/* <h6
+        className="absolute py-2 text-sm font-semibold bottom-2 hover:opacity-50 animate-pulse"
+        onClick={(e) => {
+          e.preventDefault()
+          ReactGA.event({
+            category: "portfolio",
+            action: "Portfolio clicked",
+            label: name,
+          })
+          window.location.href = "https://aadeshkulkarni.me/"
+        }}
       >
-        <span id="current-player">
-          {currentPlayer == 1 ? player1 : player2}
-        </span>
-        's Turn
-      </h3>{" "}
-      {result && <h3>{result}</h3>}
-      <div className="flex flex-wrap border border-separate rounded-lg shadow-lg border-gray-50 w-240 h-280">
-        {box &&
-          box.map((item, index) => (
-            <div
-              onClick={() => {
-                onClickHandler(index)
-              }}
-              className={`w-40 h-40 rounded-full m-0.5 border focus-within:outline-none focus:outline-none active:outline-none focus:ring-0 active:outline-none
-              ${
-                box[index + 6] !== 1 &&
-                box[index + 6] !== 2 &&
-                box[index + 6] !== -1
-                  ? "bg-gray-700"
-                  : "cursor-pointer"
-              }
-              ${index > 41 && "taken hidden"} ${
-                box[index] === 1 &&
-                "bg-gradient-to-r from-cyan-500 to-teal-400 border-teal-400 animate-coin-bounce"
-              } ${
-                box[index] === 2 &&
-                "bg-gradient-to-r from-pink-500 to-rose-400 border-rose-400 animate-coin-bounce"
-              }
-              ${winningSet.includes(index) && "border-4 border-white bg-white"}
-               `}
-            ></div>
-          ))}
-      </div>
-      <div className="grid w-full grid-cols-1 gap-2 p-3 text-white lg:flex lg:justify-center lg:items-center">
-        <button
-          onClick={() => setRules(true)}
-          className="p-4 text-sm bg-gray-900 border border-gray-700 rounded-lg shadow-xl bg-gradient-to-r from-blueGray-800 to-gray-800 focus-within:outline-none hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
-        >
-          Rules
-        </button>
-        <button
-          className="p-4 text-sm bg-gray-900 border border-gray-700 rounded-lg shadow-xl bg-gradient-to-r from-blueGray-800 to-gray-800 focus-within:outline-none hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
-          onClick={() => setPlayerInfo(true)}
-        >
-          Change Player info
-        </button>
-        <button
-          className="p-4 text-sm bg-gray-900 border border-gray-700 rounded-lg shadow-xl bg-gradient-to-r from-blueGray-800 to-gray-800 focus-within:outline-none hover:bg-opacity-50 active:bg-opacity:50 lg:w-4/12"
-          onClick={() => reset()}
-        >
-          Reset Game
-        </button>
-      </div>
-      {dialog && (
-        <div className="absolute p-4 text-white bg-gray-900 border border-gray-300 rounded-md top-10 bg-opacity-95 animate-coin-bounce">
-          You cant go in there{" "}
-        </div>
-      )}
-      {result && (
-        <div className="absolute inset-0 flex items-center justify-center w-full h-full">
-          <div className="flex flex-col items-center justify-center w-full h-full bg-black bg-opacity-60">
-            <div className="flex flex-col items-center justify-center w-full bg-black h-2/5">
-              <h2 className="m-3 text-4xl text-white uppercase animate-pulse">
-                {result}
+        Designed with <span className="text-red-900">&hearts;</span> by Aadesh
+        Kulkarni
+      </h6> */}
+      {showResult && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center w-full bg-black h-hull">
+          <h2 className="p-2 text-3xl text-white">Whack A Mole</h2>
+          <img src={mole} className="w-24 h-24 m-6" />
+          {localStorage.getItem("highScore") &&
+            localStorage.getItem("highScore") !== "" && (
+              <h2 className="p-2 text-2xl text-white">
+                Highest score: {localStorage.getItem("highScore")}
               </h2>
-              <h3 className="m-2 mt-5 text-sm text-gray-100">
-                {currentPlayer === 2 ? player2 : player1}, do you think you can
-                beat {currentPlayer === 2 ? player1 : player2}?
-              </h3>
-              <button
-                className="w-11/12 p-4 text-white border-teal-400 rounded-lg shadow-lg bg-gradient-to-r from-cyan-500 to-teal-400"
-                onClick={() => {
-                  beginPlay()
-                }}
-              >
-                Hell Yeah! Play again
-              </button>
-            </div>
-            <div className="h-3/5"></div>
-          </div>
+            )}
+          <h2 className="p-2 text-2xl text-white">Current score: {score}</h2>
+          {/* <button
+            onClick={() => {
+              getLeaderboardFn()
+              setLeaderscreen(true)
+              ReactGA.event({
+                category: "leaderboard",
+                action: "leaderboard checked",
+                label: name,
+              })
+            }}
+            className="w-8/12 p-4 m-2 text-xl bg-white border border-gray-800 rounded-lg shadow-lg focus:outline-none active:outline-none active:bg-gray-50 md:w-4/12"
+          >
+            Leaderboard
+          </button> */}
+          <button
+            onClick={() => {
+              setTimer(COUNTDOWN_TIMER)
+              setScore(0)
+              randomGenerator()
+              setShowResult(false)
+              ReactGA.event({
+                category: "play",
+                action: "Play again button clicked",
+                label: name,
+              })
+            }}
+            className="w-8/12 p-4 m-2 text-xl bg-white bg-green-500 border border-gray-800 rounded-lg shadow-lg opacity-100 focus:outline-none active:outline-none active:bg-gray-50 md:w-4/12 "
+          >
+            Play Again
+          </button>
         </div>
       )}
-      {playerInfo && (
-        <div className="absolute inset-0 flex items-center justify-center w-full h-full">
-          <div className="relative flex flex-col items-center justify-center w-full h-full bg-gray-900">
-            <h2 className="m-3 text-3xl text-white">Player Info</h2>
-            <input
-              type="text"
-              placeholder="Enter Player 1 name"
-              className="w-11/12 p-4 mb-2 text-gray-600 border border-gray-300 rounded-md lg:w-3/12 focus:outline-none focus-within:outline-none"
-              value={player1}
-              onChange={(e) => setPlayer1(e.target.value)}
-            />
-            <input
-              type="text"
-              placeholder="Enter Player 2 name"
-              className="w-11/12 p-4 mb-2 text-gray-600 border border-gray-300 rounded-md lg:w-3/12 focus:outline-none focus-within:outline-none"
-              value={player2}
-              onChange={(e) => setPlayer2(e.target.value)}
-            />
-            <button
-              className="w-11/12 p-4 text-white border-teal-400 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-400 lg:w-3/12 focus:outline-none focus-within:outline-none"
-              onClick={() => {
-                beginPlay()
-              }}
-            >
-              Let's play
-            </button>
-          </div>
+      {initial && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center w-full bg-black h-hull">
+          <h2 className="p-2 text-3xl text-white">Whack A Mole</h2>
+          <img src={mole} className="w-24 h-24 m-6" />
+          <h3 className="p-2 text-xl text-white">Rules:</h3>
+          <p className="w-7/12 p-3 text-base text-center text-white">
+            Well, there are no rules! <br />
+            Just Whack the mole <br />
+            Whack it real bad!
+          </p>
+          {/* <input
+            autoFocus
+            type="text"
+            placeholder="Enter player name"
+            value={name}
+            maxLength="15"
+            onChange={(e) => {
+              setName(e.target.value)
+            }}
+            className="w-8/12 h-16 p-4 pb-2 m-2 font-semibold text-center rounded-lg shadow-lg text-md focus-within:outline-none md:w-4/12 focus:ring-2 focus:ring-teal-600 focus:ring-opacity-50 focus:ring-inset"
+          /> */}
+          <button
+            onClick={(event) => {
+              event.preventDefault()
+              setInitial(false)
+              setShowResult(false)
+              setTimer(COUNTDOWN_TIMER)
+              setScore(0)
+              randomGenerator()
+              ReactGA.event({
+                category: "play",
+                action: "Play button clicked",
+                label: name,
+              })
+            }}
+            className={`w-8/12 p-4 m-2 text-xl text-white  border border-gray-800 rounded-lg shadow-lg bg-opacity-90 focus:outline-none active:outline-none active:bg-gray-50 md:w-4/12 opacity-100 bg-green-500 animate-pulse"
+            `}
+          >
+            Play
+          </button>
         </div>
       )}
-      {rules && (
-        <div className="absolute inset-0 flex items-center justify-center w-full h-full overflow-y-auto bg-gray-900">
-          <div className="relative flex flex-col items-center justify-center w-full h-full text-white lg:w-5/12">
-            <div
-              className="absolute text-4xl font-bold text-white top-5 right-5"
-              onClick={() => setRules(false)}
-            >
-              X
+      {leaderscreen && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center w-full bg-black h-hull">
+          <span
+            className="absolute text-3xl text-white cursor-pointer top-8 right-8"
+            onClick={() => setLeaderscreen(false)}
+          >
+            X
+          </span>
+          <h2 className="p-2 mb-4 text-3xl text-white">Leaderboard</h2>
+
+          {leaderboard && leaderboard.length === 0 && (
+            <span className="text-lg text-white">Loading data...</span>
+          )}
+          {leaderboard && leaderboard.length > 0 && (
+            <div className="grid w-10/12 grid-cols-5 p-2 text-lg bg-teal-600 bg-opacity-100 text-gray-50">
+              <div className="col-span-1"></div>
+              <div className="col-span-3">Player</div>
+              <div className="col-span-1">Score</div>
             </div>
-            <h2 className="p-2 text-3xl">Connect 4 - Rules</h2>
-            <img src={rulepic} className="h-48 my-2 w-44" alt="rules" />
-            <p className="w-11/12 lg:w-4/12">
-              The Connect 4 Board Game Rules are easy to understand. In fact, it
-              is in the name.{" "}
-            </p>
-            <p className="w-11/12 mt-2 lg:w-4/12">
-              To win Connect Four, all you have to do is connect four of your
-              colored checker pieces in a row, much the same as tic tac toe.
-              This can be done horizontally, vertically or diagonally.
-            </p>
-            <p className="w-11/12 mt-2 lg:w-4/12">
-              Each player will drop in one checker piece at a time. This will
-              give you a chance to either build your row, or stop your opponent
-              from getting four in a row.
-            </p>
-            <p className="w-11/12 mt-2 lg:w-4/12">
-              Players alternate chances until we have a winner
-            </p>
-            <button
-              className="w-11/12 p-4 mt-2 text-white border-teal-400 rounded-lg bg-gradient-to-r from-cyan-500 to-teal-400 lg:w-5/12"
-              onClick={() => {
-                setPlayerInfo(true)
-                setRules(false)
-              }}
-            >
-              Proceed
-            </button>
-          </div>
+          )}
+          {leaderboard &&
+            leaderboard.length > 0 &&
+            leaderboard.map((record, index) => (
+              <div className="grid w-10/12 grid-cols-5 p-2 text-lg text-gray-800 bg-white bg-opacity-100 border border-gray-100">
+                <div className="col-span-1">{index + 1}</div>
+                <div className="col-span-3">{record.user}</div>
+                <div className="col-span-1">{record.score}</div>
+              </div>
+            ))}
+        </div>
+      )}
+      {loader && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-hull animate-background">
+          <h1 className="p-2 text-3xl text-white">{loaderMessage}</h1>
         </div>
       )}
     </div>
