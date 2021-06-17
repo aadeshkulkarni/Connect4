@@ -5,18 +5,18 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Connect 4 - Two player Board Game" />
+    <meta name="description" content="Whac A Mole - A simple game" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100;300;400;500;700;900&display=swap"
-      rel="stylesheet"
-    />
     <!--
       manifest.json provides metadata used when your web app is installed on a
       user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Raleway:wght@200;300;400;500&display=swap"
+      rel="stylesheet"
+    />
     <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
@@ -26,13 +26,12 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>Connect 4</title>
+    <title>Whack A Mole</title>
   </head>
   <body>
-    <div id="coat"></div>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="websdk"></div>
     <div id="root"></div>
-
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
@@ -43,5 +42,57 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
+    <script>
+      var placementid_instream = "p_instream";
+      var placementid_interstitial = "p_interstitial";
+
+      var isInStreamReady = false;
+
+      function showDynamicInterstitial() {
+          document.getElementById("websdk").innerHTML = `<div id="ad3">
+              <ins class="adsbyvmax" id="p_interstitial" data-adspot-key="2eca23dc" data-pkg-name="com.aadeshk.wammyjio"></ins>
+          </div>`;
+      };
+
+      function cacheInStream() {
+          if (!isInStreamReady) {
+              document.getElementById("websdk").innerHTML = `<div id="ad4">
+                  <ins class="adsbyvmax" id="p_instream" data-adspot-key="cdec5bc0" data-pkg-name="com.jioadstesting.com"></ins>
+              </div>
+              <div id="instreamVideo" style="max-height: 300px"></div>`;
+          }
+      };
+
+      function showInStream() {
+          console.log("ShowInStream "+isInStreamReady);
+          if (isInStreamReady) {
+              VMAXSDK.showAd(placementid_instream, 'instreamVideo');
+          }
+      }
+
+      var ADCALLBACK = {platform: 'MyJio'}
+      var VMAXSDK = VMAXSDK || {};
+
+      VMAXSDK.onAdReady = function (placementid, vastXML) {
+          console.log ("JioWebSDK: onAdReady "+placementid+" placementid_instream "+placementid_instream);
+          placementid == placementid_instream && (isInStreamReady = true);
+      };
+
+      VMAXSDK.onAdError = function (placementid, error) {            
+          console.log ("JioWebSDK: onAdError "+placementid+" error "+error);
+          placementid == placementid_instream && (isInStreamReady = false);
+      };
+      VMAXSDK.onAdClose = function (placementid) {
+          console.log ("JioWebSDK: onAdClose "+placementid);
+          placementid == placementid_instream && (isInStreamReady = false);
+      };        
+
+      VMAXSDK.onAdMediaEnd = function (containerid, placementid) {
+          console.log("JioWebSDK: onAdMediaEnd", placementid);
+          placementid == placementid_instream && (isInStreamReady = false);
+      };        
+
+  </script>
+  <script src="https://jioads.akamaized.net/SingleWEBSDK/stable/ad.js"></script>
   </body>
 </html>
